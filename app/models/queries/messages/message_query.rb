@@ -26,37 +26,21 @@
 # See docs/COPYRIGHT.rdoc for more details.
 #++
 
-module API
-  module V3
-    module Posts
-      class PostRepresenter < ::API::Decorators::Single
-        include API::Decorators::LinkedResource
-        include API::Caching::CachedRepresenter
-        include ::API::V3::Attachments::AttachableRepresenterMixin
+class Queries::Messages::MessageQuery < Queries::BaseQuery
+  def self.model
+    Message
+  end
 
-        self_link title_getter: ->(*) { nil }
-
-        property :id
-
-        property :subject
-
-        property :content
-
-        associated_resource :project,
-                            link: ->(*) do
-                              {
-                                href: api_v3_paths.project(represented.project.id),
-                                title: represented.project.name
-                              }
-                            end
-
-
-        self.to_eager_load = [:parent]
-
-        def _type
-          'Post'
-        end
-      end
+  def default_scope
+    # Cannot simply use .visible here as it would
+    # filter out archived projects for everybody.
+    if User.current.admin?
+      super
+    else
+      # Directly appending the .visible scope adds a
+      # distinct which then requires every column used e.g. for ordering
+      # to be in select.
+      super.where(id: Message.visible)
     end
   end
 end

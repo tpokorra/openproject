@@ -1,3 +1,5 @@
+#-- encoding: UTF-8
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) 2012-2020 the OpenProject GmbH
@@ -29,38 +31,19 @@
 module API
   module V3
     module Posts
-      class PostsAPI < ::API::OpenProjectAPI
-          helpers do
-            def post
-              Message.visible(current_user).find(params[:id])
-            end
-            def visible_message_scope
-              if current_user.admin?
-                Message.all
-              else
-                Message.visible(current_user)
-              end
-            end
+      class PostEagerLoadingWrapper < API::V3::Utilities::EagerLoading::EagerLoadingWrapper
+        include API::V3::Utilities::EagerLoading::CustomFieldAccessor
+
+        class << self
+          def wrap(posts)
+            custom_fields = if posts && !posts.empty?
+                              posts.first
+                            end
+
+            super
+              .each { |post| }
           end
-
-          resources :posts do
-            get &::API::V3::Utilities::Endpoints::Index.new(model: Message,
-                                                          scope: -> {
-                                                            visible_message_scope
-                                                              .includes(::API::V3::Posts::PostRepresenter.to_eager_load)
-                                                          })
-                                                     .mount
-
-            route_param :id, type: Integer, desc: 'Message ID' do
-              get do
-                ::API::V3::Posts::PostRepresenter.new(post,
-                                                    current_user: current_user,
-                                                    embed_links: true)
-              end
-
-              mount ::API::V3::Attachments::AttachmentsByPostAPI
-            end
-          end
+        end
       end
     end
   end

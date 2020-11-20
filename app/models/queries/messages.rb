@@ -1,3 +1,5 @@
+#-- encoding: UTF-8
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) 2012-2020 the OpenProject GmbH
@@ -26,37 +28,9 @@
 # See docs/COPYRIGHT.rdoc for more details.
 #++
 
-module API
-  module V3
-    module Posts
-      class PostRepresenter < ::API::Decorators::Single
-        include API::Decorators::LinkedResource
-        include API::Caching::CachedRepresenter
-        include ::API::V3::Attachments::AttachableRepresenterMixin
-
-        self_link title_getter: ->(*) { nil }
-
-        property :id
-
-        property :subject
-
-        property :content
-
-        associated_resource :project,
-                            link: ->(*) do
-                              {
-                                href: api_v3_paths.project(represented.project.id),
-                                title: represented.project.name
-                              }
-                            end
-
-
-        self.to_eager_load = [:parent]
-
-        def _type
-          'Post'
-        end
-      end
-    end
-  end
+module Queries::Messages
+  register = ::Queries::Register
+  #filters = ::Queries::Messages::Filters
+  #orders = ::Queries::Messages::Orders
+  query = ::Queries::Messages::MessageQuery
 end

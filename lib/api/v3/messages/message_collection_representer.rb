@@ -1,3 +1,4 @@
+#-- encoding: UTF-8
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) 2012-2020 the OpenProject GmbH
@@ -26,35 +27,24 @@
 # See docs/COPYRIGHT.rdoc for more details.
 #++
 
+require 'roar/decorator'
+require 'roar/json'
+require 'roar/json/collection'
+require 'roar/json/hal'
+
 module API
   module V3
-    module Posts
-      class PostRepresenter < ::API::Decorators::Single
-        include API::Decorators::LinkedResource
-        include API::Caching::CachedRepresenter
-        include ::API::V3::Attachments::AttachableRepresenterMixin
+    module Messages
+      class MessageCollectionRepresenter < ::API::Decorators::UnpaginatedCollection
+        element_decorator ::API::V3::Posts::PostRepresenter
 
-        self_link title_getter: ->(*) { nil }
+        self.to_eager_load = ::API::V3::Posts::PostRepresenter.to_eager_load
+        self.checked_permissions = ::API::V3::Posts::PostRepresenter.checked_permissions
 
-        property :id
+        def initialize(models, self_link, current_user:)
+          super
 
-        property :subject
-
-        property :content
-
-        associated_resource :project,
-                            link: ->(*) do
-                              {
-                                href: api_v3_paths.project(represented.project.id),
-                                title: represented.project.name
-                              }
-                            end
-
-
-        self.to_eager_load = [:parent]
-
-        def _type
-          'Post'
+          @represented = ::API::V3::Posts::PostEagerLoadingWrapper.wrap(represented)
         end
       end
     end
